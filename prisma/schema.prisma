@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id                String       @id @default(cuid())
+  name              String
+  fatherName        String?
+  rollNumber        String       @unique
+  email             String       @unique
+  password          String
+  program           String
+  faculty           String?
+  career            String?
+  currentSemester   Int          @default(1)
+  cgpa              Float        @default(0)
+  dob               DateTime?
+  gender            String?
+  cnic              String?
+  domicile          String?
+  nationality       String?
+  religion          String?
+  bloodGroup        String?
+  fatherCnic        String?
+  maritalStatus     String?
+  contact           String?
+  emergencyContact  String?
+  presentAddress    String?
+  permanentAddress  String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  enrollments       Enrollment[]
+  feeChallans       FeeChallan[]
+}
+
+model Course {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  name         String
+  creditHours  Int
+  instructor   String
+
+  enrollments  Enrollment[]
+}
+
+model Enrollment {
+  id         String       @id @default(cuid())
+  studentId  String
+  courseId   String
+  semester   Int
+  student    Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course     Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  attendance Attendance[]
+  grade      Grade?
+
+  @@unique([studentId, courseId])
+}
+
+model Attendance {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  date         DateTime
+  status       String // Present | Absent | Leave
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+}
+
+model Grade {
+  id           String     @id @default(cuid())
+  enrollmentId String     @unique
+  midterm      Float      @default(0)
+  final        Float      @default(0)
+  sessional    Float      @default(0)
+  total        Float      @default(0)
+  gradeLetter  String?
+  gpa          Float      @default(0)
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+}
+
+model FeeChallan {
+  id           String   @id @default(cuid())
+  studentId    String
+  amount       Float
+  dueDate      DateTime
+  status       String // Paid | Unpaid
+  billingMonth String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}

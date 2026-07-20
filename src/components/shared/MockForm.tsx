@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { useEffect, useState, FormEvent, useRef } from "react";
+import { CheckCircle2, ChevronDown } from "lucide-react";
 import AccentCard from "@/components/dashboard/AccentCard";
 
 export interface MockFormField {
@@ -19,6 +19,77 @@ interface Course {
 }
 
 const TERM_OPTIONS = ["Fall 2026", "Spring 2027", "Summer 2027"];
+
+// Custom Select Component to allow green hover styling on options
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label || placeholder;
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full cursor-pointer rounded-lg border bg-white px-3 py-2.5 text-sm flex items-center justify-between transition-colors ${
+          isOpen
+            ? "border-brand-500 ring-2 ring-brand-100 text-slate-900"
+            : "border-slate-300 text-slate-900 hover:border-slate-400"
+        }`}
+      >
+        <span className={!value ? "text-slate-500" : ""}>{selectedLabel}</span>
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl max-h-60 overflow-y-auto">
+          {options.length === 0 && (
+            <div className="px-3 py-2.5 text-sm text-slate-500">Loading...</div>
+          )}
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={`px-3 py-1.5 text-sm cursor-pointer transition-colors ${
+                value === opt.value
+                  ? "bg-brand-50 text-brand-700 font-medium"
+                  : "text-slate-700 hover:bg-brand-600 hover:text-white"
+              }`}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MockForm({
   fields,
@@ -93,38 +164,23 @@ export default function MockForm({
               {field.label}
             </label>
             {field.type === "course-select" && (
-              <select
-                required={field.required}
+              <CustomSelect
                 value={values[field.name] ?? ""}
-                onChange={(e) => handleChange(field.name, e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-              >
-                <option value="" disabled>
-                  Select a course
-                </option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.code}>
-                    {c.code} · {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handleChange(field.name, val)}
+                placeholder="Select a course"
+                options={courses.map((c) => ({
+                  value: c.code,
+                  label: `${c.code} · ${c.name}`,
+                }))}
+              />
             )}
             {field.type === "term-select" && (
-              <select
-                required={field.required}
+              <CustomSelect
                 value={values[field.name] ?? ""}
-                onChange={(e) => handleChange(field.name, e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-              >
-                <option value="" disabled>
-                  Select a term
-                </option>
-                {TERM_OPTIONS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handleChange(field.name, val)}
+                placeholder="Select a term"
+                options={TERM_OPTIONS.map((t) => ({ value: t, label: t }))}
+              />
             )}
             {field.type === "password" && (
               <input
@@ -160,7 +216,14 @@ export default function MockForm({
         ))}
         <button
           type="submit"
-          className="mt-1 self-start rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+          // Disable if a course/term select field is required but not filled
+          disabled={fields.some(
+            (f) =>
+              f.required &&
+              (f.type === "course-select" || f.type === "term-select") &&
+              !values[f.name]
+          )}
+          className="mt-1 self-start rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitLabel}
         </button>

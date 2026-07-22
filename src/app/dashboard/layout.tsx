@@ -10,6 +10,8 @@ export default async function DashboardLayout({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (session.role === "admin") redirect("/admin/dashboard");
+  if (session.role === "teacher") redirect("/teacher/dashboard");
 
   const student = await prisma.student.findUnique({
     where: { id: session.studentId },

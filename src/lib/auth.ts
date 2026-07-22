@@ -7,8 +7,11 @@ const JWT_SECRET = new TextEncoder().encode(
 const COOKIE_NAME = "erp_session";
 
 export interface SessionPayload {
-  studentId: string;
-  rollNumber: string;
+  studentId?: string;
+  teacherId?: string;
+  rollNumber?: string;
+  employeeId?: string;
+  role?: "student" | "admin" | "teacher";
 }
 
 export async function signSession(payload: SessionPayload) {

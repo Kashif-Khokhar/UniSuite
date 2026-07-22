@@ -5,21 +5,47 @@ import { signSession, setSessionCookie } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const rollNumber = body?.rollNumber?.trim();
+  const identifier = body?.identifier?.trim();
   const password = body?.password;
 
-  if (!rollNumber || !password) {
+  if (!identifier || !password) {
     return NextResponse.json(
-      { error: "Roll number and password are required." },
+      { error: "Username/Roll number and password are required." },
       { status: 400 }
     );
   }
 
-  const student = await prisma.student.findUnique({ where: { rollNumber } });
+  // 1. Check for Admin Login
+  if (identifier === "admin" && password === "admin123") {
+    const token = await signSession({ role: "admin" });
+    await setSessionCookie(token);
+    return NextResponse.json({ role: "admin" });
+  }
+
+  // 2. Check for Teacher Login
+  const teacher = await prisma.teacher.findUnique({ where: { employeeId: identifier } });
+  
+  if (teacher) {
+    const passwordMatches = await bcrypt.compare(password, teacher.password);
+    if (!passwordMatches) {
+      return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
+    }
+    
+    const token = await signSession({
+      teacherId: teacher.id,
+      employeeId: teacher.employeeId,
+      role: "teacher"
+    });
+    await setSessionCookie(token);
+    return NextResponse.json({ role: "teacher" });
+  }
+
+  // 3. Fallback to Student Login
+  const student = await prisma.student.findUnique({ where: { rollNumber: identifier } });
 
   if (!student) {
     return NextResponse.json(
-      { error: "Invalid roll number or password." },
+      { error: "Invalid credentials." },
       { status: 401 }
     );
   }
@@ -27,7 +53,7 @@ export async function POST(request: NextRequest) {
   const passwordMatches = await bcrypt.compare(password, student.password);
   if (!passwordMatches) {
     return NextResponse.json(
-      { error: "Invalid roll number or password." },
+      { error: "Invalid credentials." },
       { status: 401 }
     );
   }
@@ -35,14 +61,9 @@ export async function POST(request: NextRequest) {
   const token = await signSession({
     studentId: student.id,
     rollNumber: student.rollNumber,
+    role: "student"
   });
   await setSessionCookie(token);
 
-  return NextResponse.json({
-    student: {
-      id: student.id,
-      name: student.name,
-      rollNumber: student.rollNumber,
-    },
-  });
+  return NextResponse.json({ role: "student" });
 }

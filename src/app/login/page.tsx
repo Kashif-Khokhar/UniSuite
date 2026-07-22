@@ -6,7 +6,7 @@ import { GraduationCap, Loader2, Lock, User } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [rollNumber, setRollNumber] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rollNumber, password }),
+        body: JSON.stringify({ identifier, password }),
       });
       const data = await res.json();
 
@@ -30,7 +30,13 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      if (data.role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (data.role === "teacher") {
+        router.push("/teacher/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -50,8 +56,8 @@ export default function LoginPage() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-xl">
             <GraduationCap size={28} />
           </div>
-          <h1 className="text-2xl font-semibold text-white">Student ERP Portal</h1>
-          <p className="mt-1 text-sm text-white/60">Sign in to access your academic dashboard</p>
+          <h1 className="text-2xl font-semibold text-white">UniSuite Portal</h1>
+          <p className="mt-1 text-sm text-white/60">Sign in to access your dashboard</p>
         </div>
 
         <form
@@ -60,10 +66,10 @@ export default function LoginPage() {
         >
           <div className="mb-4">
             <label
-              htmlFor="rollNumber"
+              htmlFor="identifier"
               className="mb-1.5 block text-sm font-medium text-white/80"
             >
-              Roll Number
+              ID / Roll No / Username
             </label>
             <div className="relative">
               <User
@@ -71,12 +77,12 @@ export default function LoginPage() {
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/50"
               />
               <input
-                id="rollNumber"
+                id="identifier"
                 type="text"
                 required
-                value={rollNumber}
-                onChange={(e) => setRollNumber(e.target.value)}
-                placeholder="SP21-BCS-045"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="LMP-42228, SP21-BCS-045, or admin"
                 className="glass-input w-full rounded-lg border border-white/20 bg-white/10 py-2.5 pl-10 pr-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/40 focus:ring-2 focus:ring-white/20"
               />
             </div>
@@ -121,10 +127,11 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
 
-          <p className="mt-5 text-center text-xs text-white/50">
-            Demo credentials — Roll No: <span className="font-medium text-white/70">SP21-BCS-045</span>{" "}
-            · Password: <span className="font-medium text-white/70">password123</span>
-          </p>
+          <div className="mt-5 text-center text-xs text-white/50 flex flex-col gap-1">
+            <p>Admin — ID: <span className="font-medium text-white/70">admin</span> · Pass: <span className="font-medium text-white/70">admin123</span></p>
+            <p>Teacher — ID: <span className="font-medium text-white/70">LMP-42228</span> · Pass: <span className="font-medium text-white/70">password123</span></p>
+            <p>Student — ID: <span className="font-medium text-white/70">SP21-BCS-045</span> · Pass: <span className="font-medium text-white/70">password123</span></p>
+          </div>
         </form>
       </div>
     </div>

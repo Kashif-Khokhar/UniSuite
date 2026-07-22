@@ -93,3 +93,19 @@ model FeeChallan {
   billingMonth String
   student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
+
+model Teacher {
+  id            String    @id @default(cuid())
+  employeeId    String    @unique
+  email         String    @unique
+  password      String
+  name          String
+  department    String?
+  mobile        String?
+  nationality   String?
+  institute     String?
+  joiningDate   DateTime?
+  status        String    @default("Active") // Active | Inactive
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

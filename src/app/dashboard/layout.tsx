@@ -3,6 +3,12 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardShell from "@/components/DashboardShell";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Student Dashboard",
+};
+
 export default async function DashboardLayout({
   children,
 }: {

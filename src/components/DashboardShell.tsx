@@ -10,6 +10,7 @@ import Breadcrumbs from "@/components/dashboard/Breadcrumbs";
 import QuickLauncher from "@/components/dashboard/QuickLauncher";
 import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 import UserMenu from "@/components/dashboard/UserMenu";
+import Footer from "@/components/shared/Footer";
 
 function UniversitySeal({ size = 30 }: { size?: number }) {
   const rays = Array.from({ length: 16 }, (_, i) => {
@@ -243,9 +244,7 @@ export default function DashboardShell({
             <div className="hidden items-center gap-3 border-l border-white/25 pl-4 sm:flex">
               <UniversitySeal size={30} />
               <span className="font-serif text-sm font-semibold leading-tight tracking-wide text-white">
-                MERIDIAN
-                <br />
-                UNIVERSITY
+                VTOLUTION
               </span>
             </div>
           </div>
@@ -263,6 +262,7 @@ export default function DashboardShell({
         </header>
         <Breadcrumbs />
         <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
+        <Footer />
       </div>
     </div>
   );

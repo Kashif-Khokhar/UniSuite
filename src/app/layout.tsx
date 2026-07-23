@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Student ERP Portal",
-  description: "University Student ERP Portal",
+  title: {
+    template: "%s | VTOLution",
+    default: "VTOLution",
+  },
+  description: "VTOLution Project",
 };
 
 export default function RootLayout({

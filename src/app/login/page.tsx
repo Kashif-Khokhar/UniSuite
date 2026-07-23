@@ -56,7 +56,7 @@ export default function LoginPage() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-xl">
             <GraduationCap size={28} />
           </div>
-          <h1 className="text-2xl font-semibold text-white">UniSuite Portal</h1>
+          <h1 className="text-2xl font-semibold text-white">VTOLution Project</h1>
           <p className="mt-1 text-sm text-white/60">Sign in to access your dashboard</p>
         </div>
 

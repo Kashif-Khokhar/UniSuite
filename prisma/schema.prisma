@@ -41,13 +41,14 @@ model Student {
 }
 
 model Course {
-  id           String       @id @default(cuid())
-  code         String       @unique
-  name         String
-  creditHours  Int
-  instructor   String
+  id            String        @id @default(cuid())
+  code          String        @unique
+  name          String
+  creditHours   Int
+  instructor    String
 
-  enrollments  Enrollment[]
+  enrollments   Enrollment[]
+  makeupClasses MakeupClass[]
 }
 
 model Enrollment {
@@ -108,4 +109,16 @@ model Teacher {
   status        String    @default("Active") // Active | Inactive
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model MakeupClass {
+  id        String   @id @default(cuid())
+  term      String
+  courseId  String
+  date      DateTime
+  fromTime  String
+  toTime    String
+  createdAt DateTime @default(now())
+
+  course    Course   @relation(fields: [courseId], references: [code], onDelete: Cascade)
 }

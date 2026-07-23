@@ -3,6 +3,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import TeacherDashboardShell from "@/components/teacher/TeacherDashboardShell";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Teacher Dashboard",
+};
+
 export default async function TeacherDashboardLayout({
   children,
 }: {

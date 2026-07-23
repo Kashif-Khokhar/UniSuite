@@ -2,6 +2,12 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import AdminDashboardShell from "@/components/admin/AdminDashboardShell";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Admin Dashboard",
+};
+
 export default async function AdminDashboardLayout({
   children,
 }: {

@@ -49,18 +49,6 @@ export default function StudentSupportPage() {
       >
         <Mail size={24} />
       </button>
-
-      {/* Footer */}
-      <div className="mt-12 pt-4 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between text-xs text-slate-700 w-full pb-4">
-        <div>Copyright © 2026 All Rights Reserved.</div>
-        <div className="flex items-center gap-6 mt-4 md:mt-0 font-medium">
-          <a href="#" className="hover:text-emerald-700 transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-emerald-700 transition-colors">Terms of Use</a>
-          <button className="flex items-center gap-1 hover:text-emerald-700 transition-colors">
-            English <span className="text-[9px]">▼</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

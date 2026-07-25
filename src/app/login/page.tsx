@@ -2,7 +2,8 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Loader2, Lock, User } from "lucide-react";
+import { Loader2, Lock, User } from "lucide-react";
+import { UniversitySeal } from "@/components/shared/UniversitySeal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,10 +54,10 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-xl">
-            <GraduationCap size={28} />
+          <div className="mb-8 flex items-center justify-center gap-3">
+            <UniversitySeal size={32} className="text-white" />
+            <h1 className="text-2xl font-serif font-semibold text-white">UniSuite</h1>
           </div>
-          <h1 className="text-2xl font-semibold text-white">VTOLution Project</h1>
           <p className="mt-1 text-sm text-white/60">Sign in to access your dashboard</p>
         </div>
 

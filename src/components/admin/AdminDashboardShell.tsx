@@ -7,7 +7,7 @@ import { Menu, ChevronDown, ArrowLeftFromLine, Maximize2, Minimize2, ShieldCheck
 import { ADMIN_NAV_ITEMS } from "@/lib/admin-nav-items";
 import { NavGroupItem } from "@/lib/nav-items";
 import AdminBreadcrumbs from "./AdminBreadcrumbs";
-import Footer from "@/components/shared/Footer";
+
 
 function UniversitySeal({ size = 30 }: { size?: number }) {
   const rays = Array.from({ length: 16 }, (_, i) => {
@@ -218,7 +218,7 @@ export default function AdminDashboardShell({
             <div className="hidden items-center gap-3 border-l border-white/25 pl-4 sm:flex">
               <UniversitySeal size={30} />
               <span className="font-serif text-sm font-semibold leading-tight tracking-wide text-white">
-                VTOLUTION
+                UniSuite
               </span>
             </div>
           </div>
@@ -240,7 +240,6 @@ export default function AdminDashboardShell({
         </header>
         <AdminBreadcrumbs />
         <main className="flex-1 px-4 py-6 md:px-8">{children}</main>
-        <Footer />
       </div>
     </div>
   );

@@ -351,7 +351,9 @@ export default function TeacherDashboardPage() {
       <div className="mt-6 rounded-2xl border-l-4 border-emerald-500 border-y border-r border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-emerald-500"></div>
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-emerald-500 text-white">
+              <BarChart3 size={14} />
+            </div>
             <h3 className="font-bold text-slate-800">Attendance Analytics</h3>
           </div>
           <span className="text-xs font-medium text-slate-400">7 Records</span>

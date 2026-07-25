@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | VTOLution",
-    default: "VTOLution",
+    template: "%s | UniSuite",
+    default: "UniSuite",
   },
-  description: "VTOLution Project",
+  description: "University Project",
 };
 
 export default function RootLayout({

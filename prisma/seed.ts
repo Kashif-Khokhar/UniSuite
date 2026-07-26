@@ -6,15 +6,82 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Clean existing data
+  await prisma.hostelAllocation.deleteMany();
+  await prisma.hostelRoom.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.studentRequest.deleteMany();
+  await prisma.classSchedule.deleteMany();
   await prisma.attendance.deleteMany();
   await prisma.grade.deleteMany();
   await prisma.enrollment.deleteMany();
+  await prisma.makeupClass.deleteMany();
   await prisma.feeChallan.deleteMany();
+  await prisma.section.deleteMany();
   await prisma.course.deleteMany();
   await prisma.student.deleteMany();
+  await prisma.teacher.deleteMany();
+  await prisma.department.deleteMany();
+  await prisma.admin.deleteMany();
 
   const hashedPassword = await bcrypt.hash("password123", 10);
+  const adminHashedPassword = await bcrypt.hash("admin123", 10);
 
+  // 1. Admin
+  await prisma.admin.create({
+    data: {
+      username: "admin",
+      password: adminHashedPassword,
+      name: "System Administrator",
+      email: "admin@unisuite.edu.pk",
+    }
+  });
+
+  // 2. Department
+  const deptCS = await prisma.department.create({
+    data: {
+      name: "Department of Computer Sciences",
+      code: "CS",
+      description: "Computer Science and Information Technology",
+    }
+  });
+
+  // 3. Teachers
+  const teacherNames = [
+    "Dr. Ayesha Malik",
+    "Dr. Bilal Ahmed",
+    "Ms. Sana Tariq",
+    "Mr. Usman Farooq",
+    "Dr. Nadia Iqbal",
+    "Dr. Hassan Raza",
+    "Ms. Hira Saeed",
+    "Dr. Kamran Sheikh",
+    "Mr. Faisal Iqbal",
+    "Syed Ahsan Raza Shah"
+  ];
+
+  const teacherMap: Record<string, string> = {};
+
+  for (let i = 0; i < teacherNames.length; i++) {
+    const tName = teacherNames[i];
+    const isAhsan = tName === "Syed Ahsan Raza Shah";
+    const employeeId = isAhsan ? "LMP-42228" : `EMP-10${i + 1}`;
+    
+    const teacher = await prisma.teacher.create({
+      data: {
+        employeeId,
+        email: isAhsan ? "ahsan.shah@superior.edu.pk" : `teacher${i + 1}@unisuite.edu.pk`,
+        password: hashedPassword,
+        name: tName,
+        departmentId: deptCS.id,
+        mobile: isAhsan ? "3039369405" : "03000000000",
+        nationality: "Pakistan",
+        status: "Active",
+      }
+    });
+    teacherMap[tName] = teacher.id;
+  }
+
+  // 4. Student
   const student = await prisma.student.create({
     data: {
       name: "Ismail Khan",
@@ -23,6 +90,7 @@ async function main() {
       email: "ismailkhan200314@gmail.com",
       password: hashedPassword,
       program: "BS Computer Science",
+      departmentId: deptCS.id,
       faculty: "Faculty of Computer Science and Information Technology",
       career: "Under Graduate",
       currentSemester: 6,
@@ -43,47 +111,57 @@ async function main() {
     },
   });
 
+  // 5. Courses
   const courseData = [
-    { code: "CS301", name: "Database Systems", creditHours: 3, instructor: "Dr. Ayesha Malik" },
-    { code: "CS310", name: "Operating Systems", creditHours: 3, instructor: "Dr. Bilal Ahmed" },
-    { code: "CS322", name: "Software Engineering", creditHours: 3, instructor: "Ms. Sana Tariq" },
-    { code: "CS340", name: "Computer Networks", creditHours: 3, instructor: "Mr. Usman Farooq" },
-    { code: "MATH210", name: "Probability & Statistics", creditHours: 3, instructor: "Dr. Nadia Iqbal" },
-    { code: "CS350", name: "Artificial Intelligence", creditHours: 3, instructor: "Dr. Hassan Raza" },
+    { code: "CS301", name: "Database Systems", creditHours: 3, instructorName: "Dr. Ayesha Malik" },
+    { code: "CS310", name: "Operating Systems", creditHours: 3, instructorName: "Dr. Bilal Ahmed" },
+    { code: "CS322", name: "Software Engineering", creditHours: 3, instructorName: "Ms. Sana Tariq" },
+    { code: "CS340", name: "Computer Networks", creditHours: 3, instructorName: "Mr. Usman Farooq" },
+    { code: "MATH210", name: "Probability & Statistics", creditHours: 3, instructorName: "Dr. Nadia Iqbal" },
+    { code: "CS350", name: "Artificial Intelligence", creditHours: 3, instructorName: "Dr. Hassan Raza" },
   ];
 
-  // Elective courses the student is not enrolled in — used to populate the
-  // Self Enrollment page with real, unenrolled options.
   const electiveCourseData = [
-    { code: "CS360", name: "Web Engineering", creditHours: 3, instructor: "Ms. Hira Saeed" },
-    { code: "CS370", name: "Human-Computer Interaction", creditHours: 3, instructor: "Dr. Kamran Sheikh" },
-    { code: "CS410", name: "Cloud Computing", creditHours: 3, instructor: "Mr. Faisal Iqbal" },
+    { code: "CS360", name: "Web Engineering", creditHours: 3, instructorName: "Ms. Hira Saeed" },
+    { code: "CS370", name: "Human-Computer Interaction", creditHours: 3, instructorName: "Dr. Kamran Sheikh" },
+    { code: "CS410", name: "Cloud Computing", creditHours: 3, instructorName: "Mr. Faisal Iqbal" },
   ];
 
-  const courses = [];
+  const coursesWithSection = [];
   for (const c of courseData) {
-    courses.push(await prisma.course.create({ data: c }));
+    const course = await prisma.course.create({ 
+      data: { code: c.code, name: c.name, creditHours: c.creditHours, departmentId: deptCS.id } 
+    });
+    const section = await prisma.section.create({
+      data: { name: "BSCS-6A", courseId: course.id, teacherId: teacherMap[c.instructorName] }
+    });
+    coursesWithSection.push({ course, section });
   }
+  
   for (const c of electiveCourseData) {
-    await prisma.course.create({ data: c });
+    const course = await prisma.course.create({ 
+      data: { code: c.code, name: c.name, creditHours: c.creditHours, departmentId: deptCS.id } 
+    });
+    await prisma.section.create({
+      data: { name: "BSCS-6A", courseId: course.id, teacherId: teacherMap[c.instructorName] }
+    });
   }
 
   // Distinct attendance rate per course so the dashboard shows a realistic mix
   // (some courses above the 75% threshold, some below).
   const attendanceRates = [0.9, 0.65, 0.8, 0.55, 0.95, 0.72];
 
-  for (let courseIndex = 0; courseIndex < courses.length; courseIndex++) {
-    const course = courses[courseIndex];
+  for (let courseIndex = 0; courseIndex < coursesWithSection.length; courseIndex++) {
+    const { section } = coursesWithSection[courseIndex];
     const enrollment = await prisma.enrollment.create({
       data: {
         studentId: student.id,
-        courseId: course.id,
+        sectionId: section.id,
         semester: 6,
       },
     });
 
     // Attendance: 20 lectures per course, spread across Present/Absent/Leave
-    // at this course's target attendance rate.
     const rate = attendanceRates[courseIndex % attendanceRates.length];
     const lectureCount = 20;
     const presentCount = Math.round(rate * lectureCount);
@@ -146,60 +224,59 @@ async function main() {
     });
   }
 
-  // Historical semesters (1-5) — completed terms shown in the Results page's
-  // "Previous Courses" tab, distinct from semester 6 which is still active.
+  // Historical semesters
   const HISTORICAL_SEMESTERS: {
     semester: number;
-    courses: { code: string; name: string; creditHours: number; instructor: string; marks: number }[];
+    courses: { code: string; name: string; creditHours: number; instructorName: string; marks: number }[];
   }[] = [
     {
       semester: 1,
       courses: [
-        { code: "H101", name: "Applied Physics", creditHours: 3, instructor: "Dr. Nadia Iqbal", marks: 78 },
-        { code: "H102", name: "English Composition & Comprehension", creditHours: 3, instructor: "Ms. Sana Tariq", marks: 72 },
-        { code: "H103", name: "Introduction to Computing", creditHours: 3, instructor: "Mr. Usman Farooq", marks: 68 },
-        { code: "H104", name: "Programming Fundamentals", creditHours: 3, instructor: "Dr. Ayesha Malik", marks: 74 },
-        { code: "H105", name: "Introduction to Logic", creditHours: 3, instructor: "Dr. Hassan Raza", marks: 80 },
+        { code: "H101", name: "Applied Physics", creditHours: 3, instructorName: "Dr. Nadia Iqbal", marks: 78 },
+        { code: "H102", name: "English Composition & Comprehension", creditHours: 3, instructorName: "Ms. Sana Tariq", marks: 72 },
+        { code: "H103", name: "Introduction to Computing", creditHours: 3, instructorName: "Mr. Usman Farooq", marks: 68 },
+        { code: "H104", name: "Programming Fundamentals", creditHours: 3, instructorName: "Dr. Ayesha Malik", marks: 74 },
+        { code: "H105", name: "Introduction to Logic", creditHours: 3, instructorName: "Dr. Hassan Raza", marks: 80 },
       ],
     },
     {
       semester: 2,
       courses: [
-        { code: "H201", name: "Calculus & Analytical Geometry", creditHours: 3, instructor: "Dr. Nadia Iqbal", marks: 75 },
-        { code: "H202", name: "Digital Logic Design", creditHours: 3, instructor: "Mr. Faisal Iqbal", marks: 70 },
-        { code: "H203", name: "Object Oriented Programming", creditHours: 3, instructor: "Dr. Ayesha Malik", marks: 73 },
-        { code: "H204", name: "Discrete Structures", creditHours: 3, instructor: "Dr. Bilal Ahmed", marks: 78 },
-        { code: "H205", name: "Pakistan Studies", creditHours: 3, instructor: "Ms. Hira Saeed", marks: 82 },
+        { code: "H201", name: "Calculus & Analytical Geometry", creditHours: 3, instructorName: "Dr. Nadia Iqbal", marks: 75 },
+        { code: "H202", name: "Digital Logic Design", creditHours: 3, instructorName: "Mr. Faisal Iqbal", marks: 70 },
+        { code: "H203", name: "Object Oriented Programming", creditHours: 3, instructorName: "Dr. Ayesha Malik", marks: 73 },
+        { code: "H204", name: "Discrete Structures", creditHours: 3, instructorName: "Dr. Bilal Ahmed", marks: 78 },
+        { code: "H205", name: "Pakistan Studies", creditHours: 3, instructorName: "Ms. Hira Saeed", marks: 82 },
       ],
     },
     {
       semester: 3,
       courses: [
-        { code: "H301", name: "Data Structures & Algorithms", creditHours: 3, instructor: "Dr. Bilal Ahmed", marks: 80 },
-        { code: "H302", name: "Computer Organization & Assembly", creditHours: 3, instructor: "Mr. Faisal Iqbal", marks: 76 },
-        { code: "H303", name: "Linear Algebra", creditHours: 3, instructor: "Dr. Nadia Iqbal", marks: 79 },
-        { code: "H304", name: "Technical & Business Writing", creditHours: 3, instructor: "Ms. Sana Tariq", marks: 83 },
-        { code: "H305", name: "Numerical Computing", creditHours: 3, instructor: "Dr. Kamran Sheikh", marks: 77 },
+        { code: "H301", name: "Data Structures & Algorithms", creditHours: 3, instructorName: "Dr. Bilal Ahmed", marks: 80 },
+        { code: "H302", name: "Computer Organization & Assembly", creditHours: 3, instructorName: "Mr. Faisal Iqbal", marks: 76 },
+        { code: "H303", name: "Linear Algebra", creditHours: 3, instructorName: "Dr. Nadia Iqbal", marks: 79 },
+        { code: "H304", name: "Technical & Business Writing", creditHours: 3, instructorName: "Ms. Sana Tariq", marks: 83 },
+        { code: "H305", name: "Numerical Computing", creditHours: 3, instructorName: "Dr. Kamran Sheikh", marks: 77 },
       ],
     },
     {
       semester: 4,
       courses: [
-        { code: "H401", name: "Theory of Automata", creditHours: 3, instructor: "Dr. Hassan Raza", marks: 82 },
-        { code: "H402", name: "Requirements Engineering", creditHours: 3, instructor: "Ms. Sana Tariq", marks: 85 },
-        { code: "H403", name: "Computer Architecture", creditHours: 3, instructor: "Mr. Faisal Iqbal", marks: 79 },
-        { code: "H404", name: "Technical Report Writing II", creditHours: 3, instructor: "Ms. Hira Saeed", marks: 88 },
-        { code: "H405", name: "Islamic Studies", creditHours: 3, instructor: "Dr. Kamran Sheikh", marks: 84 },
+        { code: "H401", name: "Theory of Automata", creditHours: 3, instructorName: "Dr. Hassan Raza", marks: 82 },
+        { code: "H402", name: "Requirements Engineering", creditHours: 3, instructorName: "Ms. Sana Tariq", marks: 85 },
+        { code: "H403", name: "Computer Architecture", creditHours: 3, instructorName: "Mr. Faisal Iqbal", marks: 79 },
+        { code: "H404", name: "Technical Report Writing II", creditHours: 3, instructorName: "Ms. Hira Saeed", marks: 88 },
+        { code: "H405", name: "Islamic Studies", creditHours: 3, instructorName: "Dr. Kamran Sheikh", marks: 84 },
       ],
     },
     {
       semester: 5,
       courses: [
-        { code: "H501", name: "Information Security Fundamentals", creditHours: 3, instructor: "Dr. Bilal Ahmed", marks: 86 },
-        { code: "H502", name: "Compiler Construction", creditHours: 3, instructor: "Dr. Hassan Raza", marks: 89 },
-        { code: "H503", name: "Parallel Computing Basics", creditHours: 3, instructor: "Mr. Faisal Iqbal", marks: 83 },
-        { code: "H504", name: "Professional Practices", creditHours: 3, instructor: "Ms. Hira Saeed", marks: 90 },
-        { code: "H505", name: "Entrepreneurship", creditHours: 3, instructor: "Dr. Ayesha Malik", marks: 87 },
+        { code: "H501", name: "Information Security Fundamentals", creditHours: 3, instructorName: "Dr. Bilal Ahmed", marks: 86 },
+        { code: "H502", name: "Compiler Construction", creditHours: 3, instructorName: "Dr. Hassan Raza", marks: 89 },
+        { code: "H503", name: "Parallel Computing Basics", creditHours: 3, instructorName: "Mr. Faisal Iqbal", marks: 83 },
+        { code: "H504", name: "Professional Practices", creditHours: 3, instructorName: "Ms. Hira Saeed", marks: 90 },
+        { code: "H505", name: "Entrepreneurship", creditHours: 3, instructorName: "Dr. Ayesha Malik", marks: 87 },
       ],
     },
   ];
@@ -207,10 +284,14 @@ async function main() {
   for (const term of HISTORICAL_SEMESTERS) {
     for (const c of term.courses) {
       const course = await prisma.course.create({
-        data: { code: c.code, name: c.name, creditHours: c.creditHours, instructor: c.instructor },
+        data: { code: c.code, name: c.name, creditHours: c.creditHours, departmentId: deptCS.id },
+      });
+      const sectionName = `BSCS-${term.semester}A`;
+      const section = await prisma.section.create({
+        data: { name: sectionName, courseId: course.id, teacherId: teacherMap[c.instructorName] }
       });
       const enrollment = await prisma.enrollment.create({
-        data: { studentId: student.id, courseId: course.id, semester: term.semester },
+        data: { studentId: student.id, sectionId: section.id, semester: term.semester },
       });
       const { gradeLetter, gpa } = marksToGrade(c.marks);
       const midterm = Math.round(c.marks * 0.25);
@@ -253,7 +334,9 @@ async function main() {
   }
 
   console.log("Seed complete.");
-  console.log(`Login with Roll Number: ${student.rollNumber} / Password: password123`);
+  console.log(`Login Admin: admin / admin123`);
+  console.log(`Login Student: ${student.rollNumber} / password123`);
+  console.log(`Login Teacher: LMP-42228 / password123`);
 }
 
 main()

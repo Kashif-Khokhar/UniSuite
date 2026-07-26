@@ -8,6 +8,27 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  
+  students    Student[]
+  teachers    Teacher[]
+  courses     Course[]
+}
+
 model Student {
   id                String       @id @default(cuid())
   name              String
@@ -16,6 +37,10 @@ model Student {
   email             String       @unique
   password          String
   program           String
+  
+  departmentId      String?
+  department        Department?  @relation(fields: [departmentId], references: [id])
+  
   faculty           String?
   career            String?
   currentSemester   Int          @default(1)
@@ -38,6 +63,29 @@ model Student {
 
   enrollments       Enrollment[]
   feeChallans       FeeChallan[]
+  requests          StudentRequest[]
+  hostelAllocation  HostelAllocation?
+}
+
+model Teacher {
+  id            String    @id @default(cuid())
+  employeeId    String    @unique
+  email         String    @unique
+  password      String
+  name          String
+  
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+
+  mobile        String?
+  nationality   String?
+  institute     String?
+  joiningDate   DateTime?
+  status        String    @default("Active") // Active | Inactive
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sections      Section[]
 }
 
 model Course {
@@ -45,24 +93,41 @@ model Course {
   code          String        @unique
   name          String
   creditHours   Int
-  instructor    String
+  
+  departmentId  String?
+  department    Department?   @relation(fields: [departmentId], references: [id])
 
+  sections      Section[]
+}
+
+model Section {
+  id            String        @id @default(cuid())
+  name          String        // e.g. "Section A", "BSCS-6A"
+  courseId      String
+  teacherId     String?
+  
+  course        Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher       Teacher?      @relation(fields: [teacherId], references: [id])
+  
   enrollments   Enrollment[]
   makeupClasses MakeupClass[]
+  schedules     ClassSchedule[]
+
+  @@unique([courseId, name])
 }
 
 model Enrollment {
   id         String       @id @default(cuid())
   studentId  String
-  courseId   String
+  sectionId  String
   semester   Int
   student    Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course     Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  section    Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   attendance Attendance[]
   grade      Grade?
 
-  @@unique([studentId, courseId])
+  @@unique([studentId, sectionId])
 }
 
 model Attendance {
@@ -95,30 +160,64 @@ model FeeChallan {
   student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
-model Teacher {
-  id            String    @id @default(cuid())
-  employeeId    String    @unique
-  email         String    @unique
-  password      String
-  name          String
-  department    String?
-  mobile        String?
-  nationality   String?
-  institute     String?
-  joiningDate   DateTime?
-  status        String    @default("Active") // Active | Inactive
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
 model MakeupClass {
   id        String   @id @default(cuid())
   term      String
-  courseId  String
+  sectionId String
   date      DateTime
   fromTime  String
   toTime    String
   createdAt DateTime @default(now())
 
-  course    Course   @relation(fields: [courseId], references: [code], onDelete: Cascade)
+  section   Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
+model ClassSchedule {
+  id        String   @id @default(cuid())
+  sectionId String
+  dayOfWeek String   // Monday, Tuesday, etc.
+  startTime String   // e.g., "09:00 AM"
+  endTime   String   // e.g., "10:30 AM"
+  room      String?
+
+  section   Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
+model StudentRequest {
+  id          String   @id @default(cuid())
+  studentId   String
+  type        String   // e.g., Transcript, Leave, Re-test
+  description String?
+  status      String   @default("Pending") // Pending | Approved | Rejected
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  target    String   // All, Student, Teacher, specific ID
+  createdAt DateTime @default(now())
+}
+
+model HostelRoom {
+  id          String   @id @default(cuid())
+  roomNumber  String   @unique
+  capacity    Int
+  available   Int
+  
+  allocations HostelAllocation[]
+}
+
+model HostelAllocation {
+  id          String   @id @default(cuid())
+  studentId   String   @unique
+  roomId      String
+  allocatedAt DateTime @default(now())
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  room        HostelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
 }

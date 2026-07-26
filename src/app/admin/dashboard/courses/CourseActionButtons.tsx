@@ -5,7 +5,11 @@ import { deleteCourse } from "../actions";
 import EditCourseModal from "./EditCourseModal";
 import { Course } from "@prisma/client";
 
-export default function CourseActionButtons({ course }: { course: Course }) {
+interface Props {
+  course: Course;
+}
+
+export default function CourseActionButtons({ course }: Props) {
   const [isPending, startTransition] = useTransition();
 
   return (

@@ -44,7 +44,7 @@ export default function DashboardCharts({ feeData, programData }: DashboardChart
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => `Rs. ${value.toLocaleString()}`}
+                formatter={(value: any) => `Rs. ${Number(value || 0).toLocaleString()}`}
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
               />
             </PieChart>

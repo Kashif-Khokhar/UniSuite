@@ -16,8 +16,19 @@ export async function POST(request: NextRequest) {
   }
 
   // 1. Check for Admin Login
-  if (identifier === "admin" && password === "admin123") {
-    const token = await signSession({ role: "admin" });
+  const admin = await prisma.admin.findUnique({ where: { username: identifier } });
+  
+  if (admin) {
+    const passwordMatches = await bcrypt.compare(password, admin.password);
+    if (!passwordMatches) {
+      return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
+    }
+    
+    const token = await signSession({
+      adminId: admin.id,
+      username: admin.username,
+      role: "admin"
+    });
     await setSessionCookie(token);
     return NextResponse.json({ role: "admin" });
   }

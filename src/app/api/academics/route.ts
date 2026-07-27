@@ -20,11 +20,11 @@ export async function GET() {
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId: auth.studentId },
     include: {
-      course: true,
+      section: { include: { course: true, teacher: true } },
       attendance: true,
       grade: true,
     },
-    orderBy: { course: { code: "asc" } },
+    orderBy: { section: { course: { code: "asc" } } },
   });
 
   const percentageByEnrollment = new Map<string, number>();
@@ -44,10 +44,10 @@ export async function GET() {
 
   const courses = currentEnrollments.map((e) => ({
     id: e.id,
-    code: e.course.code,
-    name: e.course.name,
-    creditHours: e.course.creditHours,
-    instructor: e.course.instructor,
+    code: e.section.course.code,
+    name: e.section.course.name,
+    creditHours: e.section.course.creditHours,
+    instructor: e.section.teacher?.name || "Unassigned",
     semester: e.semester,
     termLabel: termLabelForSemester(student.rollNumber, e.semester),
     detained: isDetained(e),
@@ -59,8 +59,8 @@ export async function GET() {
     const attended = e.attendance.filter((a) => a.status === "Present").length;
     return {
       id: e.id,
-      courseCode: e.course.code,
-      courseName: e.course.name,
+      courseCode: e.section.course.code,
+      courseName: e.section.course.name,
       semester: e.semester,
       termLabel: termLabelForSemester(student.rollNumber, e.semester),
       delivered: e.attendance.length,
@@ -81,9 +81,9 @@ export async function GET() {
       const detained = isDetained(e);
       const grade = e.grade!;
       return {
-        courseCode: e.course.code,
-        courseName: e.course.name,
-        creditHours: e.course.creditHours,
+        courseCode: e.section.course.code,
+        courseName: e.section.course.name,
+        creditHours: e.section.course.creditHours,
         midterm: grade.midterm,
         final: detained ? null : grade.final,
         sessional: grade.sessional,

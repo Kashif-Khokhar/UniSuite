@@ -2,9 +2,18 @@ import { prisma } from "@/lib/prisma";
 import { Search } from "lucide-react";
 import StudentActionButtons from "./StudentActionButtons";
 import AddStudentModal from "./AddStudentModal";
+import SearchInput from "@/components/shared/SearchInput";
 
-export default async function AdminStudentsPage() {
+export default async function AdminStudentsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+
   const students = await prisma.student.findMany({
+    where: q ? {
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { rollNumber: { contains: q, mode: "insensitive" } },
+      ],
+    } : undefined,
     orderBy: { createdAt: "desc" },
     take: 50,
   });
@@ -19,14 +28,7 @@ export default async function AdminStudentsPage() {
         <AddStudentModal />
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-brand-400 focus-within:ring-1 focus-within:ring-brand-400">
-        <Search size={18} className="text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search students by name or roll number..."
-          className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-        />
-      </div>
+      <SearchInput placeholder="Search students by name or roll number..." />
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">

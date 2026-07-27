@@ -1,9 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { Search } from "lucide-react";
 import MarkPaidButton from "./MarkPaidButton";
+import SearchInput from "@/components/shared/SearchInput";
 
-export default async function AdminFinancePage() {
+export default async function AdminFinancePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+
   const challans = await prisma.feeChallan.findMany({
+    where: q ? {
+      student: {
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { rollNumber: { contains: q, mode: "insensitive" } },
+        ],
+      },
+    } : undefined,
     include: { student: true },
     orderBy: { dueDate: "asc" },
   });
@@ -17,14 +27,7 @@ export default async function AdminFinancePage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-brand-400 focus-within:ring-1 focus-within:ring-brand-400">
-        <Search size={18} className="text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search by student name or roll number..."
-          className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-        />
-      </div>
+      <SearchInput placeholder="Search by student name or roll number..." />
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">

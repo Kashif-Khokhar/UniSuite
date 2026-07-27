@@ -6,7 +6,11 @@ import { Modal } from "@/components/shared/Modal";
 import { updateCourse } from "../actions";
 import { Course } from "@prisma/client";
 
-export default function EditCourseModal({ course }: { course: Course }) {
+interface EditCourseModalProps {
+  course: Course;
+}
+
+export default function EditCourseModal({ course }: EditCourseModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,16 +64,7 @@ export default function EditCourseModal({ course }: { course: Course }) {
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Instructor Name</label>
-            <input
-              name="instructor"
-              type="text"
-              defaultValue={course.instructor}
-              required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
+
 
           <div className="rounded bg-amber-50 p-3 text-xs text-amber-700">
             For data integrity, the Course Code ({course.code}) cannot be changed here.

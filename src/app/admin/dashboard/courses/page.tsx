@@ -1,11 +1,21 @@
 import { prisma } from "@/lib/prisma";
-import { Search } from "lucide-react";
+import { Search, Layers } from "lucide-react";
 import CourseActionButtons from "./CourseActionButtons";
 import AddCourseModal from "./AddCourseModal";
+import Link from "next/link";
+import SearchInput from "@/components/shared/SearchInput";
 
-export default async function AdminCoursesPage() {
+export default async function AdminCoursesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
   const courses = await prisma.course.findMany({
+    where: q ? {
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { code: { contains: q, mode: "insensitive" } },
+      ],
+    } : undefined,
     orderBy: { name: "asc" },
+    include: { sections: { include: { teacher: true } } },
   });
 
   return (
@@ -13,19 +23,12 @@ export default async function AdminCoursesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Manage Courses</h1>
-          <p className="text-slate-500">View and manage the university course catalog.</p>
+          <p className="text-slate-500">View and manage the university course catalog and sections.</p>
         </div>
         <AddCourseModal />
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-brand-400 focus-within:ring-1 focus-within:ring-brand-400">
-        <Search size={18} className="text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search courses by name or code..."
-          className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-        />
-      </div>
+      <SearchInput placeholder="Search courses by name or code..." />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => (
@@ -37,8 +40,18 @@ export default async function AdminCoursesPage() {
               <span className="text-xs font-medium text-slate-500">{course.creditHours} CR</span>
             </div>
             <h3 className="mb-1 text-lg font-bold text-slate-800">{course.name}</h3>
-            <p className="text-sm text-slate-500">Instructor: {course.instructor}</p>
-            <CourseActionButtons course={course} />
+            <p className="text-sm text-slate-500 mb-4">{course.sections.length} Section(s)</p>
+            
+            <div className="flex flex-col gap-2">
+              <Link 
+                href={`/admin/dashboard/courses/${course.id}/sections`}
+                className="flex items-center justify-center gap-2 rounded-md bg-brand-50 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-100 transition-colors"
+              >
+                <Layers size={16} />
+                Manage Sections
+              </Link>
+              <CourseActionButtons course={course} />
+            </div>
           </div>
         ))}
         {courses.length === 0 && (

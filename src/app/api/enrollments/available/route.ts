@@ -9,9 +9,9 @@ export async function GET() {
   const enrolledCourseIds = (
     await prisma.enrollment.findMany({
       where: { studentId: auth.studentId },
-      select: { courseId: true },
+      select: { section: { select: { courseId: true } } },
     })
-  ).map((e) => e.courseId);
+  ).map((e) => e.section.courseId);
 
   const availableCourses = await prisma.course.findMany({
     where: { id: { notIn: enrolledCourseIds } },

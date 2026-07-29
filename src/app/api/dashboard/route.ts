@@ -20,14 +20,14 @@ export async function GET() {
 
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId: auth.studentId },
-    include: { course: true, attendance: true, grade: true },
+    include: { section: { include: { course: true, teacher: true } }, attendance: true, grade: true },
   });
 
   // Attendance, today's schedule, SGPA, etc. are all about the in-progress
   // current term — historical semesters only feed the CGPA trend below.
   const currentEnrollments = enrollments.filter((e) => e.semester === student.currentSemester);
 
-  const totalCreditHours = currentEnrollments.reduce((sum, e) => sum + e.course.creditHours, 0);
+  const totalCreditHours = currentEnrollments.reduce((sum, e) => sum + e.section.course.creditHours, 0);
 
   const allAttendance = currentEnrollments.flatMap((e) => e.attendance);
   const presentCount = allAttendance.filter((a) => a.status === "Present").length;
@@ -50,9 +50,9 @@ export async function GET() {
 
   const fullSchedule = currentEnrollments.map((e, index) => ({
     day: WEEKDAYS[index % WEEKDAYS.length],
-    courseCode: e.course.code,
-    courseName: e.course.name,
-    instructor: e.course.instructor,
+    courseCode: e.section.course.code,
+    courseName: e.section.course.name,
+    instructor: e.section.teacher?.name || "Unassigned",
     time: TIME_SLOTS[index % TIME_SLOTS.length],
     room: ROOMS[index % ROOMS.length],
   }));
@@ -69,8 +69,8 @@ export async function GET() {
     const attended = e.attendance.filter((a) => a.status === "Present").length;
     const percentage = delivered ? Math.round((attended / delivered) * 1000) / 10 : 0;
     return {
-      courseCode: e.course.code,
-      courseName: e.course.name,
+      courseCode: e.section.course.code,
+      courseName: e.section.course.name,
       percentage,
       detained: percentage < ATTENDANCE_THRESHOLD,
     };

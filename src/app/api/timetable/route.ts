@@ -19,8 +19,8 @@ export async function GET() {
 
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId: auth.studentId },
-    include: { course: true },
-    orderBy: { course: { code: "asc" } },
+    include: { section: { include: { course: true, teacher: true } } },
+    orderBy: { section: { course: { code: "asc" } } },
   });
 
   const timetable = WEEKDAYS.map((day) => ({ day, sessions: [] as Record<string, string>[] }));
@@ -34,9 +34,9 @@ export async function GET() {
     
     // Pick time slot based on index to ensure variety
     dayEntry.sessions.push({
-      courseCode: `${e.course.code}-S26-PB-GCL-BSCSM-FALL`,
-      courseName: e.course.name,
-      instructor: e.course.instructor,
+      courseCode: `${e.section.course.code}-S26-PB-GCL-BSCSM-FALL`,
+      courseName: e.section.course.name,
+      instructor: e.section.teacher?.name || "Unassigned",
       time: TIME_SLOTS[index % TIME_SLOTS.length],
       room: `${ROOMS[index % ROOMS.length]} ( Lecture )`,
     });

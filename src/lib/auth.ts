@@ -9,8 +9,10 @@ const COOKIE_NAME = "erp_session";
 export interface SessionPayload {
   studentId?: string;
   teacherId?: string;
+  adminId?: string;
   rollNumber?: string;
   employeeId?: string;
+  username?: string;
   role?: "student" | "admin" | "teacher";
 }
 

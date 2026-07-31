@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Wallet,
   User,
+  Users,
   GraduationCap,
   CalendarCheck2,
   BarChart3,
@@ -21,9 +22,9 @@ import { NavItem } from "./nav-items";
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { type: "link", label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { type: "link", label: "Students", href: "/admin/dashboard/students", icon: User }, // Was Profile
-  { type: "link", label: "Courses", href: "/admin/dashboard/courses", icon: BookMarked }, // Added Manage Courses
-  { type: "link", label: "Attendance", href: "/admin/dashboard/attendance", icon: CalendarCheck2 },
+  { type: "link", label: "Students", href: "/admin/dashboard/students", icon: User },
+  { type: "link", label: "Teachers", href: "/admin/dashboard/teachers", icon: Users },
+  { type: "link", label: "Courses", href: "/admin/dashboard/courses", icon: BookMarked },
   { type: "link", label: "Results & Exams", href: "/admin/dashboard/results", icon: BarChart3 },
   { type: "link", label: "Notifications", href: "/admin/dashboard/notifications", icon: Bell },
   {

@@ -25,7 +25,7 @@ export async function GET(
 
   const enrollment = await prisma.enrollment.findFirst({
     where: { id: enrollmentId, studentId: auth.studentId },
-    include: { course: true, grade: true },
+    include: { section: { include: { course: true } }, grade: true },
   });
 
   if (!enrollment) {
@@ -42,9 +42,9 @@ export async function GET(
     : [];
 
   return NextResponse.json({
-    courseCode: enrollment.course.code,
-    courseName: enrollment.course.name,
-    creditHours: enrollment.course.creditHours,
+    courseCode: enrollment.section.course.code,
+    courseName: enrollment.section.course.name,
+    creditHours: enrollment.section.course.creditHours,
     termLabel: termLabelForSemester(student.rollNumber, enrollment.semester),
     assessments,
   });

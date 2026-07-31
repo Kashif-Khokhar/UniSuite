@@ -16,7 +16,7 @@ export async function GET(
   const enrollment = await prisma.enrollment.findFirst({
     where: { id: enrollmentId, studentId: auth.studentId },
     include: {
-      course: true,
+      section: { include: { course: true } },
       attendance: { orderBy: { date: "asc" } },
     },
   });
@@ -30,8 +30,8 @@ export async function GET(
   const percentage = delivered ? Math.round((attended / delivered) * 10000) / 100 : 0;
 
   return NextResponse.json({
-    courseCode: enrollment.course.code,
-    courseName: enrollment.course.name,
+    courseCode: enrollment.section.course.code,
+    courseName: enrollment.section.course.name,
     semester: enrollment.semester,
     delivered,
     attended,

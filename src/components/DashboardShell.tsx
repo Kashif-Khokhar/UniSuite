@@ -230,7 +230,7 @@ export default function DashboardShell({
       </aside>
 
       {/* Main column */}
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-gradient-to-r from-brand-700 to-brand-600 px-4 shadow-sm md:px-8">
           <div className="flex items-center gap-4">
             <button

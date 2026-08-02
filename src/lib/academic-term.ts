@@ -34,7 +34,9 @@ export interface TermSummary {
 
 interface EnrollmentForTerm {
   semester: number;
-  course: { code: string; name: string; creditHours: number };
+  section: {
+    course: { code: string; name: string; creditHours: number };
+  };
   grade: {
     total: number;
     gradeLetter: string | null;
@@ -61,9 +63,9 @@ export function buildTermSummaries(rollNumber: string, enrollments: EnrollmentFo
   return semesters.map((semester) => {
     const rows = bySemester.get(semester)!;
     const courses: TermCourseGrade[] = rows.map((e) => ({
-      courseCode: e.course.code,
-      courseName: e.course.name,
-      creditHours: e.course.creditHours,
+      courseCode: e.section.course.code,
+      courseName: e.section.course.name,
+      creditHours: e.section.course.creditHours,
       marksObtained: e.grade!.total,
       gradeLetter: e.grade!.gradeLetter ?? "—",
       gpa: e.grade!.gpa,

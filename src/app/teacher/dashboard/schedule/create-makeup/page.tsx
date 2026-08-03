@@ -4,18 +4,19 @@ import { ChevronDown, CalendarDays, Clock, CheckCircle2 } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import { createMakeupClass, getCourses } from "./actions";
 
-interface Course {
-  code: string;
+interface Section {
+  id: string;
   name: string;
+  course: { code: string; name: string };
 }
 
 export default function CreateMakeupPage() {
   const [state, formAction, isPending] = useActionState(createMakeupClass, null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
 
   useEffect(() => {
-    getCourses().then(setCourses).catch(console.error);
+    getCourses().then(setSections).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -70,11 +71,11 @@ export default function CreateMakeupPage() {
 
           {/* Row 2 */}
           <div className="relative">
-            <select name="courseId" required className="w-full appearance-none border-b border-slate-200 bg-transparent py-2 pl-2 pr-8 text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer">
+            <select name="sectionId" required className="w-full appearance-none border-b border-slate-200 bg-transparent py-2 pl-2 pr-8 text-sm text-slate-700 outline-none focus:border-brand-500 cursor-pointer">
               <option value="">Select Class...</option>
-              {courses.map((course) => (
-                <option key={course.code} value={course.code}>
-                  {course.code} - {course.name}
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.course.code} - {section.course.name} ({section.name})
                 </option>
               ))}
             </select>

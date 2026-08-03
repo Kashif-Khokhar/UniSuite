@@ -7,31 +7,17 @@ export async function getRoster(makeupClassId: string) {
   try {
     const makeupClass = await prisma.makeupClass.findUnique({
       where: { id: makeupClassId },
-      include: { course: true },
+      include: { section: { include: { course: true } } },
     });
 
     if (!makeupClass) {
       return { error: "Class not found" };
     }
 
-    const courseId = makeupClass.courseId; // This is the Course code, wait, Course relation uses `code`
-    
-    // Wait, the Enrollment relation to Course uses `courseId` mapping to `Course.id`.
-    // Let's verify this.
-    // Course model has `id` and `code`.
-    // Enrollment uses `courseId` referring to `Course.id`.
-    // MakeupClass uses `courseId` referring to `Course.code`.
-    // So we first need the Course's `id` to find Enrollments.
-    const course = await prisma.course.findUnique({
-      where: { code: courseId }
-    });
-
-    if (!course) {
-      return { error: "Course not found" };
-    }
+    const sectionId = makeupClass.sectionId;
 
     const enrollments = await prisma.enrollment.findMany({
-      where: { courseId: course.id },
+      where: { sectionId: sectionId },
       include: {
         student: true,
       },

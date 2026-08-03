@@ -2,14 +2,19 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireTeacherId } from "@/lib/api-auth";
 
 export async function getCourses() {
   try {
-    const courses = await prisma.course.findMany({
-      select: { code: true, name: true },
-      orderBy: { code: "asc" },
+    const auth = await requireTeacherId();
+    if ("error" in auth) return [];
+
+    const sections = await prisma.section.findMany({
+      where: { teacherId: auth.teacherId },
+      include: { course: true },
+      orderBy: { course: { code: "asc" } },
     });
-    return JSON.parse(JSON.stringify(courses));
+    return JSON.parse(JSON.stringify(sections));
   } catch (error) {
     console.error("Failed to fetch courses in server action:", error);
     return [];
@@ -20,11 +25,11 @@ export async function createMakeupClass(prevState: any, formData: FormData) {
   try {
     const term = formData.get("term") as string;
     const dateStr = formData.get("date") as string;
-    const courseId = formData.get("courseId") as string;
+    const sectionId = formData.get("sectionId") as string;
     const fromTime = formData.get("fromTime") as string;
     const toTime = formData.get("toTime") as string;
 
-    if (!term || !dateStr || !courseId || !fromTime || !toTime) {
+    if (!term || !dateStr || !sectionId || !fromTime || !toTime) {
       return { error: "Please fill out all fields." };
     }
 
@@ -34,7 +39,7 @@ export async function createMakeupClass(prevState: any, formData: FormData) {
       data: {
         term,
         date,
-        courseId,
+        sectionId,
         fromTime,
         toTime,
       },

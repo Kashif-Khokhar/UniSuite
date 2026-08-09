@@ -1,43 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, ChevronDown, ArrowLeftFromLine, Maximize2, Minimize2 } from "lucide-react";
-import { NAV_ITEMS, NavGroupItem } from "@/lib/nav-items";
-import { getAvatarUrl } from "@/lib/avatar";
+import { 
+  Menu, 
+  ChevronDown, 
+  Search,
+  Bell,
+  GraduationCap,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  LogOut
+} from "lucide-react";
+import { NAV_ITEMS } from "@/lib/nav-items";
+import { NavGroupItem } from "@/lib/nav-items";
 import Breadcrumbs from "@/components/dashboard/Breadcrumbs";
-import QuickLauncher from "@/components/dashboard/QuickLauncher";
-import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
-import UserMenu from "@/components/dashboard/UserMenu";
-
-
-function UniversitySeal({ size = 30 }: { size?: number }) {
-  const rays = Array.from({ length: 16 }, (_, i) => {
-    const angle = (i * 360) / 16;
-    return (
-      <line
-        key={i}
-        x1="16"
-        y1="16"
-        x2="16"
-        y2="5"
-        stroke="currentColor"
-        strokeWidth="1"
-        opacity={i % 2 === 0 ? 0.9 : 0.5}
-        transform={`rotate(${angle} 16 16)`}
-      />
-    );
-  });
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className="shrink-0 text-white">
-      <circle cx="16" cy="16" r="15" stroke="currentColor" strokeWidth="1.25" />
-      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="0.75" opacity={0.6} />
-      {rays}
-      <circle cx="16" cy="16" r="2.5" fill="currentColor" />
-    </svg>
-  );
-}
+import { getAvatarUrl } from "@/lib/avatar";
 
 export default function DashboardShell({
   studentName,
@@ -49,30 +29,33 @@ export default function DashboardShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const avatarUrl = getAvatarUrl(rollNumber);
-  // Single source of truth for sidebar visibility, toggled from the navbar —
-  // an overlay drawer on mobile, a persistent panel on desktop. Closed means
-  // fully hidden, not just narrowed to icons.
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Labels the user has explicitly toggled, overriding the route-derived default.
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [toggledGroups, setToggledGroups] = useState<Set<string>>(new Set());
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  const avatarUrl = getAvatarUrl(rollNumber);
 
   useEffect(() => {
-    function handleFullscreenChange() {
-      setIsFullscreen(!!document.fullscreenElement);
-    }
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
+    setNotificationsOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
 
-  function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    } else {
-      document.documentElement.requestFullscreen().catch(() => {});
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
     }
-  }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function isGroupActive(item: NavGroupItem) {
     return item.children.some((c) => pathname.startsWith(c.href));
@@ -95,31 +78,15 @@ export default function DashboardShell({
     });
   }
 
-  // Auto-close the sidebar whenever a destination is picked, on every screen size.
   function handleNavClick() {
-    setSidebarOpen(false);
-  }
-
-  function renderStudentBanner() {
-    return (
-      <div className="mb-6 flex flex-col items-center gap-3 bg-gradient-to-br from-brand-700 to-brand-600 px-4 py-6 text-center">
-        {/* eslint-disable-next-line @next/next/no-img-element -- external placeholder photo, not worth Image config */}
-        <img
-          src={avatarUrl}
-          alt={studentName}
-          className="h-24 w-24 rounded-full object-cover ring-4 ring-white/30"
-        />
-        <div>
-          <p className="text-sm font-semibold text-white">{studentName}</p>
-          <p className="text-xs text-brand-100">{rollNumber}</p>
-        </div>
-      </div>
-    );
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   }
 
   function renderNav() {
     return (
-      <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3">
+      <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto mt-4">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
 
@@ -131,14 +98,15 @@ export default function DashboardShell({
                 key={item.href}
                 href={item.href}
                 onClick={handleNavClick}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex items-center ${sidebarOpen ? 'gap-4 px-6' : 'justify-center px-0'} py-3.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-brand-700 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                    ? "bg-brand-600 text-white"
+                    : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
                 }`}
+                title={!sidebarOpen ? item.label : undefined}
               >
                 <Icon size={18} className="shrink-0" />
-                <span className="truncate">{item.label}</span>
+                {sidebarOpen && <span className="truncate">{item.label}</span>}
               </Link>
             );
           }
@@ -147,25 +115,30 @@ export default function DashboardShell({
           const groupActive = isGroupActive(item);
 
           return (
-            <div key={item.label}>
+            <div key={item.label} className="relative group">
               <button
                 type="button"
-                onClick={() => toggleGroup(item.label)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                onClick={() => sidebarOpen && toggleGroup(item.label)}
+                className={`flex w-full items-center ${sidebarOpen ? 'gap-4 px-6' : 'justify-center px-0'} py-3.5 text-sm font-medium transition-colors ${
                   groupActive
-                    ? "text-brand-700"
-                    : "text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                    ? "text-brand-600 bg-brand-50/50"
+                    : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
                 }`}
+                title={!sidebarOpen ? item.label : undefined}
               >
                 <Icon size={18} className="shrink-0" />
-                <span className="flex-1 truncate text-left">{item.label}</span>
-                <ChevronDown
-                  size={14}
-                  className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                />
+                {sidebarOpen && (
+                  <>
+                    <span className="flex-1 truncate text-left">{item.label}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </>
+                )}
               </button>
-              {isOpen && (
-                <div className="ml-4 flex flex-col gap-0.5 border-l border-slate-200 pl-3">
+              {sidebarOpen && isOpen && (
+                <div className="flex flex-col gap-0.5 bg-slate-50/30">
                   {item.children.map((child) => {
                     const isChildActive = pathname.startsWith(child.href);
                     return (
@@ -173,10 +146,10 @@ export default function DashboardShell({
                         key={child.href}
                         href={child.href}
                         onClick={handleNavClick}
-                        className={`rounded-lg px-3 py-2 text-sm transition-colors ${
+                        className={`pl-12 pr-6 py-2.5 text-sm transition-colors ${
                           isChildActive
-                            ? "bg-brand-50 font-medium text-brand-700"
-                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                            ? "font-medium text-brand-600"
+                            : "text-slate-500 hover:text-brand-800 hover:bg-brand-50/50"
                         }`}
                       >
                         {child.label}
@@ -193,71 +166,176 @@ export default function DashboardShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      {/* Desktop sidebar — always mounted so the width change animates;
-          overflow-hidden clips the fixed-width inner panel as it collapses
-          to 0 instead of the content reflowing/wrapping mid-transition. */}
+    <div className="flex min-h-screen bg-background">
+      {/* Sidebar Desktop */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 self-start overflow-hidden border-slate-200 bg-white transition-all duration-300 ease-in-out md:flex ${
-          sidebarOpen ? "w-60 border-r" : "w-0 border-r-0"
+        className={`sticky top-0 hidden h-screen shrink-0 self-start overflow-hidden border-r border-slate-200 bg-white transition-all duration-300 ease-in-out md:flex flex-col ${
+          sidebarOpen ? "w-60" : "w-[80px]"
         }`}
       >
-        <div className="flex h-full w-60 shrink-0 flex-col pb-6">
-          {renderStudentBanner()}
-          {renderNav()}
+        <div className={`flex h-16 items-center px-6 border-b border-slate-200 ${!sidebarOpen ? 'justify-center px-0' : ''}`}>
+           <div className="flex items-center gap-2">
+             <div className="text-brand-600 shrink-0">
+                <GraduationCap size={28} className="stroke-[2.5]" />
+             </div>
+             {sidebarOpen && (
+               <div className="flex flex-col">
+                 <span className="font-bold text-xl text-brand-800 leading-tight tracking-tight">UniSuite</span>
+                 <span className="text-[10px] font-bold text-brand-500 tracking-widest uppercase">Student</span>
+               </div>
+             )}
+           </div>
+        </div>
+        
+        {renderNav()}
+
+        {/* Collapse Button */}
+        <div className="p-4 border-t border-slate-100 flex justify-center">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`flex items-center ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors w-full`}
+            title={sidebarOpen ? "Collapse" : "Expand"}
+          >
+            {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            {sidebarOpen && <span>Collapse</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Mobile sidebar overlay — slides in BELOW the fixed-height header
-          (top-16) rather than covering it, so the header's toggle button
-          stays visible and clickable (as a collapse arrow) the whole time
-          the drawer is open, instead of being hidden under the panel. Both
-          the backdrop and panel stay mounted and animate via
-          opacity/transform so closing transitions too, not just opening. */}
+      {/* Mobile Sidebar Overlay */}
       <div
-        className={`fixed inset-x-0 top-16 bottom-0 z-30 bg-black/30 transition-opacity duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
           sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setSidebarOpen(false)}
       />
+      
+      {/* Mobile Sidebar */}
       <aside
-        className={`fixed left-0 top-16 z-[45] flex h-[calc(100vh-4rem)] w-60 flex-col overflow-hidden bg-white pb-6 shadow-xl transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {renderStudentBanner()}
+        <div className="flex h-16 items-center px-6 border-b border-slate-200">
+           <div className="flex items-center gap-2">
+             <div className="text-brand-600">
+                <GraduationCap size={28} className="stroke-[2.5]" />
+             </div>
+             <div className="flex flex-col">
+               <span className="font-bold text-xl text-brand-800 leading-tight tracking-tight">UniSuite</span>
+               <span className="text-[10px] font-bold text-brand-500 tracking-widest uppercase">Student</span>
+             </div>
+           </div>
+        </div>
         {renderNav()}
       </aside>
 
-      {/* Main column */}
       <div className="flex min-h-screen flex-1 flex-col min-w-0">
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-gradient-to-r from-brand-700 to-brand-600 px-4 shadow-sm md:px-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className="flex items-center text-white"
-            >
-              {sidebarOpen ? <ArrowLeftFromLine size={22} /> : <Menu size={22} />}
-            </button>
-            <QuickLauncher />
-            <div className="hidden items-center gap-3 border-l border-white/25 pl-4 sm:flex">
-              <UniversitySeal size={30} />
-              <span className="font-serif text-sm font-semibold leading-tight tracking-wide text-white">
-                UniSuite
-              </span>
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white px-6 shadow-sm border-b border-slate-200">
+          <div className="flex items-center gap-4 flex-1">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex md:hidden items-center text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                <Menu size={24} />
+              </button>
+            )}
+            
+            {/* Search Bar */}
+            <div className="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full max-w-md focus-within:border-brand-600 focus-within:ring-1 focus-within:ring-brand-600 transition-all">
+              <Search size={18} className="text-slate-400 mr-2 shrink-0" />
+              <input 
+                type="text" 
+                placeholder="Search globally..." 
+                className="bg-transparent border-none outline-none w-full text-sm text-slate-700 placeholder:text-slate-400"
+              />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              className="hidden items-center text-white sm:flex"
-            >
-              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-            </button>
-            <NotificationsPanel />
-            <UserMenu studentName={studentName} avatarUrl={avatarUrl} />
+          
+          <div className="flex items-center gap-6">
+
+            
+            {/* Notifications */}
+            <div className="relative" ref={notificationsRef}>
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className={`relative p-2 rounded-full transition-colors ${notificationsOpen ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              >
+                <Bell size={22} />
+                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white border-2 border-white">
+                  3
+                </span>
+              </button>
+              
+              {notificationsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl bg-white shadow-xl border border-slate-100 overflow-hidden z-50">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-800">Notifications</h3>
+                    <button className="text-sm font-medium text-brand-600 hover:text-brand-800">
+                      Mark all as read
+                    </button>
+                  </div>
+                  <div className="flex flex-col max-h-[400px] overflow-y-auto">
+                    {/* Notification Item 1 */}
+                    <div className="flex flex-col gap-1 px-5 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer">
+                      <p className="font-medium text-brand-600">Assignment Graded</p>
+                      <p className="text-sm text-slate-500 leading-relaxed">
+                        Your submission for Data Structures has been graded.
+                      </p>
+                      <p className="text-sm font-medium text-brand-600 mt-1">2 hours ago</p>
+                    </div>
+                    {/* Notification Item 2 */}
+                    <div className="flex flex-col gap-1 px-5 py-4 hover:bg-slate-50 transition-colors cursor-pointer">
+                      <p className="font-medium text-slate-800">Registration Open</p>
+                      <p className="text-sm text-slate-500 leading-relaxed">
+                        Course registration for the upcoming semester is now open.
+                      </p>
+                      <p className="text-sm font-medium text-slate-400 mt-1">Yesterday</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Profile */}
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setProfileOpen(!profileOpen)}
+                className={`flex items-center gap-2 p-0.5 pr-2 rounded-full transition-all border-2 ${profileOpen ? 'border-brand-800 bg-white' : 'border-transparent hover:bg-slate-50'}`}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 overflow-hidden shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={avatarUrl} alt={studentName} className="h-full w-full object-cover" />
+                </div>
+                <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
+              </button>
+              
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-white shadow-lg border border-slate-100 overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <p className="text-sm font-medium text-slate-900 truncate">{studentName}</p>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">Student</p>
+                  </div>
+                  <div className="py-1">
+                    <Link 
+                      href="/dashboard/profile"
+                      className="group flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-800 transition-colors"
+                    >
+                      <User size={16} className="text-slate-400 group-hover:text-brand-800 transition-colors" />
+                      View Profile
+                    </Link>
+                    <Link 
+                      href="/logout"
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut size={16} className="text-red-500" />
+                      Logout
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <Breadcrumbs />

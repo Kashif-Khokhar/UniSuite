@@ -1,40 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, ChevronDown, ArrowLeftFromLine, Maximize2, Minimize2, GraduationCap, LogOut } from "lucide-react";
+import { 
+  Menu, 
+  ChevronDown, 
+  Search,
+  Bell,
+  GraduationCap,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  LogOut
+} from "lucide-react";
 import { TEACHER_NAV_ITEMS } from "@/lib/teacher-nav-items";
 import { NavGroupItem } from "@/lib/nav-items";
 import TeacherBreadcrumbs from "./TeacherBreadcrumbs";
-
-
-function UniversitySeal({ size = 30 }: { size?: number }) {
-  const rays = Array.from({ length: 16 }, (_, i) => {
-    const angle = (i * 360) / 16;
-    return (
-      <line
-        key={i}
-        x1="16"
-        y1="16"
-        x2="16"
-        y2="5"
-        stroke="currentColor"
-        strokeWidth="1"
-        opacity={i % 2 === 0 ? 0.9 : 0.5}
-        transform={`rotate(${angle} 16 16)`}
-      />
-    );
-  });
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className="shrink-0 text-white">
-      <circle cx="16" cy="16" r="15" stroke="currentColor" strokeWidth="1.25" />
-      <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="0.75" opacity={0.6} />
-      {rays}
-      <circle cx="16" cy="16" r="2.5" fill="currentColor" />
-    </svg>
-  );
-}
 
 export default function TeacherDashboardShell({
   teacherName,
@@ -44,25 +26,31 @@ export default function TeacherDashboardShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [toggledGroups, setToggledGroups] = useState<Set<string>>(new Set());
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleFullscreenChange() {
-      setIsFullscreen(!!document.fullscreenElement);
-    }
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
+    setNotificationsOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
 
-  function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    } else {
-      document.documentElement.requestFullscreen().catch(() => {});
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
     }
-  }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function isGroupActive(item: NavGroupItem) {
     return item.children.some((c) => pathname.startsWith(c.href));
@@ -86,26 +74,14 @@ export default function TeacherDashboardShell({
   }
 
   function handleNavClick() {
-    setSidebarOpen(false);
-  }
-
-  function renderTeacherBanner() {
-    return (
-      <div className="mb-6 flex flex-col items-center gap-3 bg-gradient-to-br from-brand-800 to-teal-800 px-4 py-6 text-center shadow-inner">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full ring-4 ring-white/30 bg-white/10 text-white backdrop-blur-md">
-          <span className="text-4xl font-normal">{teacherName.charAt(0)}</span>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-white">{teacherName}</p>
-          <p className="text-xs text-brand-200">Faculty Member</p>
-        </div>
-      </div>
-    );
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   }
 
   function renderNav() {
     return (
-      <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3">
+      <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto mt-4">
         {TEACHER_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
 
@@ -117,14 +93,15 @@ export default function TeacherDashboardShell({
                 key={item.href}
                 href={item.href}
                 onClick={handleNavClick}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex items-center ${sidebarOpen ? 'gap-4 px-6' : 'justify-center px-0'} py-3.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-brand-600 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                    ? "bg-brand-600 text-white"
+                    : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
                 }`}
+                title={!sidebarOpen ? item.label : undefined}
               >
                 <Icon size={18} className="shrink-0" />
-                <span className="truncate">{item.label}</span>
+                {sidebarOpen && <span className="truncate">{item.label}</span>}
               </Link>
             );
           }
@@ -133,25 +110,30 @@ export default function TeacherDashboardShell({
           const groupActive = isGroupActive(item);
 
           return (
-            <div key={item.label}>
+            <div key={item.label} className="relative group">
               <button
                 type="button"
-                onClick={() => toggleGroup(item.label)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                onClick={() => sidebarOpen && toggleGroup(item.label)}
+                className={`flex w-full items-center ${sidebarOpen ? 'gap-4 px-6' : 'justify-center px-0'} py-3.5 text-sm font-medium transition-colors ${
                   groupActive
-                    ? "text-brand-700"
-                    : "text-slate-600 hover:bg-brand-50 hover:text-brand-700"
+                    ? "text-brand-600 bg-brand-50/50"
+                    : "text-slate-500 hover:bg-brand-50 hover:text-brand-800"
                 }`}
+                title={!sidebarOpen ? item.label : undefined}
               >
                 <Icon size={18} className="shrink-0" />
-                <span className="flex-1 truncate text-left">{item.label}</span>
-                <ChevronDown
-                  size={14}
-                  className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                />
+                {sidebarOpen && (
+                  <>
+                    <span className="flex-1 truncate text-left">{item.label}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </>
+                )}
               </button>
-              {isOpen && (
-               <div className="ml-4 flex flex-col gap-0.5 border-l border-slate-200 pl-3">
+              {sidebarOpen && isOpen && (
+                <div className="flex flex-col gap-0.5 bg-slate-50/30">
                   {item.children.map((child) => {
                     const isChildActive = pathname.startsWith(child.href);
                     return (
@@ -159,10 +141,10 @@ export default function TeacherDashboardShell({
                         key={child.href}
                         href={child.href}
                         onClick={handleNavClick}
-                        className={`rounded-lg px-3 py-2 text-sm transition-colors ${
+                        className={`pl-12 pr-6 py-2.5 text-sm transition-colors ${
                           isChildActive
-                            ? "bg-brand-50 font-medium text-brand-700"
-                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                            ? "font-medium text-brand-600"
+                            : "text-slate-500 hover:text-brand-800 hover:bg-brand-50/50"
                         }`}
                       >
                         {child.label}
@@ -179,63 +161,167 @@ export default function TeacherDashboardShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-background">
+      {/* Sidebar Desktop */}
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 self-start overflow-hidden border-slate-200 bg-white transition-all duration-300 ease-in-out md:flex ${
-          sidebarOpen ? "w-64 border-r shadow-[2px_0_10px_rgba(0,0,0,0.05)]" : "w-0 border-r-0"
+        className={`sticky top-0 hidden h-screen shrink-0 self-start overflow-hidden border-r border-slate-200 bg-white transition-all duration-300 ease-in-out md:flex flex-col ${
+          sidebarOpen ? "w-60" : "w-[80px]"
         }`}
       >
-        <div className="flex h-full w-64 shrink-0 flex-col pb-6">
-          {renderTeacherBanner()}
-          {renderNav()}
+        <div className={`flex h-16 items-center px-6 border-b border-slate-200 ${!sidebarOpen ? 'justify-center px-0' : ''}`}>
+           <div className="flex items-center gap-2">
+             <div className="text-brand-600 shrink-0">
+                <GraduationCap size={28} className="stroke-[2.5]" />
+             </div>
+             {sidebarOpen && (
+               <div className="flex flex-col">
+                 <span className="font-bold text-xl text-brand-800 leading-tight tracking-tight">UniSuite</span>
+                 <span className="text-[10px] font-bold text-brand-500 tracking-widest uppercase">Faculty</span>
+               </div>
+             )}
+           </div>
+        </div>
+        
+        {renderNav()}
+
+        {/* Collapse Button */}
+        <div className="p-4 border-t border-slate-100 flex justify-center">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`flex items-center ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors w-full`}
+            title={sidebarOpen ? "Collapse" : "Expand"}
+          >
+            {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            {sidebarOpen && <span>Collapse</span>}
+          </button>
         </div>
       </aside>
 
+      {/* Mobile Sidebar Overlay */}
       <div
-        className={`fixed inset-x-0 top-16 bottom-0 z-30 bg-black/30 transition-opacity duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
           sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setSidebarOpen(false)}
       />
+      
+      {/* Mobile Sidebar */}
       <aside
-        className={`fixed left-0 top-16 z-[45] flex h-[calc(100vh-4rem)] w-64 flex-col overflow-hidden bg-white pb-6 shadow-xl transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {renderTeacherBanner()}
+        <div className="flex h-16 items-center px-6 border-b border-slate-200">
+           <div className="flex items-center gap-2">
+             <div className="text-brand-600">
+                <GraduationCap size={28} className="stroke-[2.5]" />
+             </div>
+             <div className="flex flex-col">
+               <span className="font-bold text-xl text-brand-800 leading-tight tracking-tight">UniSuite</span>
+               <span className="text-[10px] font-bold text-brand-500 tracking-widest uppercase">Faculty</span>
+             </div>
+           </div>
+        </div>
         {renderNav()}
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col min-w-0">
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-gradient-to-r from-brand-900 via-brand-800 to-teal-900 px-4 shadow-sm md:px-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              className="flex items-center text-white p-2 hover:bg-white/10 rounded-md transition-colors"
-            >
-              {sidebarOpen ? <ArrowLeftFromLine size={22} /> : <Menu size={22} />}
-            </button>
-            <div className="hidden items-center gap-3 border-l border-white/25 pl-4 sm:flex">
-              <UniversitySeal size={30} />
-              <span className="font-serif text-sm font-semibold leading-tight tracking-wide text-white">
-                UniSuite
-              </span>
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-white px-6 shadow-sm border-b border-slate-200">
+          <div className="flex items-center gap-4 flex-1">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex md:hidden items-center text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                <Menu size={24} />
+              </button>
+            )}
+            
+            {/* Search Bar */}
+            <div className="hidden md:flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 w-full max-w-md focus-within:border-brand-600 focus-within:ring-1 focus-within:ring-brand-600 transition-all">
+              <Search size={18} className="text-slate-400 mr-2 shrink-0" />
+              <input 
+                type="text" 
+                placeholder="Search globally..." 
+                className="bg-transparent border-none outline-none w-full text-sm text-slate-700 placeholder:text-slate-400"
+              />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleFullscreen}
-              className="hidden items-center text-white sm:flex p-2 hover:bg-white/10 rounded-md transition-colors"
-            >
-              {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-            </button>
-            <Link
-              href="/logout"
-              className="flex items-center gap-2 rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/20 ml-2"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Logout</span>
-            </Link>
+          
+          <div className="flex items-center gap-6">
+
+            
+            {/* Notifications */}
+            <div className="relative" ref={notificationsRef}>
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className={`relative p-2 rounded-full transition-colors ${notificationsOpen ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              >
+                <Bell size={22} />
+                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white border-2 border-white">
+                  1
+                </span>
+              </button>
+              
+              {notificationsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl bg-white shadow-xl border border-slate-100 overflow-hidden z-50">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                    <h3 className="font-semibold text-slate-800">Notifications</h3>
+                    <button className="text-sm font-medium text-brand-600 hover:text-brand-800">
+                      Mark all as read
+                    </button>
+                  </div>
+                  <div className="flex flex-col max-h-[400px] overflow-y-auto">
+                    {/* Notification Item */}
+                    <div className="flex flex-col gap-1 px-5 py-4 hover:bg-slate-50 transition-colors cursor-pointer">
+                      <p className="font-medium text-slate-800">Department Meeting</p>
+                      <p className="text-sm text-slate-500 leading-relaxed">
+                        Monthly faculty meeting has been rescheduled to Friday at 2PM.
+                      </p>
+                      <p className="text-sm font-medium text-slate-400 mt-1">Today</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Profile */}
+            <div className="relative" ref={profileRef}>
+              <button 
+                onClick={() => setProfileOpen(!profileOpen)}
+                className={`flex items-center gap-2 p-0.5 pr-2 rounded-full transition-all border-2 ${profileOpen ? 'border-brand-800 bg-white' : 'border-transparent hover:bg-slate-50'}`}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-sm font-medium text-white shadow-sm">
+                  {teacherName.charAt(0)}
+                </div>
+                <ChevronDown size={14} className="text-slate-600 hidden sm:block" />
+              </button>
+              
+              {profileOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-white shadow-lg border border-slate-100 overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <p className="text-sm font-medium text-slate-900 truncate">{teacherName}</p>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">Faculty Member</p>
+                  </div>
+                  <div className="py-1">
+                    <Link 
+                      href="/teacher/dashboard/profile"
+                      className="group flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-800 transition-colors"
+                    >
+                      <User size={16} className="text-slate-400 group-hover:text-brand-800 transition-colors" />
+                      View Profile
+                    </Link>
+                    <Link 
+                      href="/logout"
+                      className="flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut size={16} className="text-red-500" />
+                      Logout
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <TeacherBreadcrumbs />

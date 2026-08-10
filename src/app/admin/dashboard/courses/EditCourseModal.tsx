@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { updateCourse } from "../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import { Course } from "@prisma/client";
 
 interface EditCourseModalProps {
@@ -14,6 +15,7 @@ export default function EditCourseModal({ course }: EditCourseModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,6 +28,7 @@ export default function EditCourseModal({ course }: EditCourseModalProps) {
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Course updated successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }

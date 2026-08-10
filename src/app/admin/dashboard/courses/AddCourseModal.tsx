@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { createCourse } from "../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AddCourseModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,6 +23,7 @@ export default function AddCourseModal() {
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Course added successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }
@@ -44,7 +47,7 @@ export default function AddCourseModal() {
               name="code"
               type="text"
               required
-              placeholder="e.g. CSC101"
+              placeholder="e.g. CS-412"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>

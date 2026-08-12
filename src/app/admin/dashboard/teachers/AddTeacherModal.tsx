@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { createTeacher } from "../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AddTeacherModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,6 +23,7 @@ export default function AddTeacherModal() {
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Teacher added successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }
@@ -44,7 +47,7 @@ export default function AddTeacherModal() {
               name="name"
               type="text"
               required
-              placeholder="e.g. Dr. John Doe"
+              placeholder="e.g. Dr. Sarah Jenkins"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -54,7 +57,7 @@ export default function AddTeacherModal() {
               name="employeeId"
               type="text"
               required
-              placeholder="e.g. EMP-101"
+              placeholder="e.g. FAC-24-089"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -64,7 +67,7 @@ export default function AddTeacherModal() {
               name="email"
               type="email"
               required
-              placeholder="e.g. teacher@university.edu"
+              placeholder="e.g. s.jenkins@unisuite.edu"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>

@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { createStudent } from "../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export default function AddStudentModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,6 +23,7 @@ export default function AddStudentModal() {
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Student added successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }

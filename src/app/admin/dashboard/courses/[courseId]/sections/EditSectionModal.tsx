@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { updateSection } from "../../../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import { Section } from "@prisma/client";
 
 interface EditSectionModalProps {
@@ -15,6 +16,7 @@ export default function EditSectionModal({ section, teachers }: EditSectionModal
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,6 +29,7 @@ export default function EditSectionModal({ section, teachers }: EditSectionModal
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Section updated successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }

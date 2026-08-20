@@ -69,7 +69,7 @@ export default function EnrollStudentModal({ sectionId }: Props) {
               name="rollNumber"
               type="text"
               required
-              placeholder="e.g. BSCS-12345"
+              placeholder="e.g. FA23-BCS-045"
               className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>

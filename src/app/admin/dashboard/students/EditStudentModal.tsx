@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Edit2, Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { updateStudent } from "../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import { Student } from "@prisma/client";
 
 export default function EditStudentModal({ student }: { student: Student }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,6 +24,7 @@ export default function EditStudentModal({ student }: { student: Student }) {
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Student updated successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }

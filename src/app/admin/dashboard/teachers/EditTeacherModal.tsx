@@ -4,12 +4,14 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { updateTeacher } from "../actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import { Teacher } from "@prisma/client";
 
 export default function EditTeacherModal({ teacher }: { teacher: Teacher }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,6 +24,7 @@ export default function EditTeacherModal({ teacher }: { teacher: Teacher }) {
     setLoading(false);
     if (res.success) {
       setIsOpen(false);
+      showToast("Teacher updated successfully.");
     } else {
       setError(res.error || "Something went wrong");
     }

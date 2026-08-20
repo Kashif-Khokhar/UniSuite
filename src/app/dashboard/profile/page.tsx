@@ -1,54 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
+import { useState, useRef, useEffect } from "react";
+import { 
+  Camera, 
+  User, 
+  Key, 
+  Phone, 
+  Globe, 
+  ShieldCheck,
   Mail,
-  Phone,
-  Contact as ContactIcon,
-  Home,
-  Cake,
-  Users,
-  CreditCard,
-  Map,
-  Flag,
-  Droplet,
-  Heart,
-  Pencil,
+  ChevronDown,
+  Move,
+  Trash2,
+  Check,
+  X
 } from "lucide-react";
-import { formatDate, ordinal } from "@/lib/format";
+import { useToast } from "@/components/ui/ToastProvider";
 import { getAvatarUrl } from "@/lib/avatar";
 
 interface StudentProfile {
   name: string;
-  fatherName: string | null;
   rollNumber: string;
   email: string;
-  program: string;
-  faculty: string | null;
-  career: string | null;
-  currentSemester: number;
-  cgpa: number;
-  dob: string | null;
-  gender: string | null;
-  cnic: string | null;
-  domicile: string | null;
-  nationality: string | null;
-  religion: string | null;
-  bloodGroup: string | null;
-  fatherCnic: string | null;
-  maritalStatus: string | null;
   contact: string | null;
-  emergencyContact: string | null;
-  presentAddress: string | null;
-  permanentAddress: string | null;
 }
 
-type Tab = "about" | "bioData";
-
-export default function ProfilePage() {
+export default function StudentProfilePage() {
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("about");
+
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+  
+  // Cover Photo Adjustment State
+  const [isAdjustingCover, setIsAdjustingCover] = useState(false);
+  const [coverPositionY, setCoverPositionY] = useState(50);
+  const [dragStartY, setDragStartY] = useState<number | null>(null);
+
+  // Profile Photo State
+  const [isEditingProfilePhoto, setIsEditingProfilePhoto] = useState(false);
+
+  const { showToast } = useToast();
+
+  const profileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/profile", { cache: "no-store" })
@@ -56,6 +51,46 @@ export default function ProfilePage() {
       .then((json) => setStudent(json.student))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleProfileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      setProfileImage(url);
+      setIsEditingProfilePhoto(true);
+    }
+  };
+
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      setCoverImage(url);
+      setIsAdjustingCover(true);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isAdjustingCover) return;
+    setDragStartY(e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isAdjustingCover || dragStartY === null) return;
+    const deltaY = e.clientY - dragStartY;
+    const percentageChange = (deltaY / 192) * 100;
+    
+    setCoverPositionY((prev) => {
+      let next = prev - percentageChange;
+      if (next < 0) next = 0;
+      if (next > 100) next = 100;
+      return next;
+    });
+    setDragStartY(e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    if (!isAdjustingCover) return;
+    setDragStartY(null);
+  };
 
   if (loading) {
     return <div className="text-sm text-slate-500">Loading profile...</div>;
@@ -66,158 +101,270 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="relative bg-gradient-to-br from-brand-700 to-brand-600 px-6 pb-6 pt-6 text-white sm:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element -- external placeholder photo, not worth Image config */}
-          <img
-            src={getAvatarUrl(student.rollNumber)}
-            alt={student.name}
-            className="h-20 w-20 shrink-0 rounded-full border-4 border-white/30 object-cover"
-          />
-          <div>
-            <p className="text-lg font-semibold sm:text-xl">
-              {student.rollNumber}-{student.name}
-            </p>
-            <p className="text-sm text-brand-100">{student.rollNumber}</p>
-            {student.faculty && <p className="text-sm text-brand-100">{student.faculty}</p>}
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-          <HeaderStat value={student.career ?? "—"} label="Career" />
-          <HeaderStat value={student.program} label="Program" />
-          <HeaderStat value={ordinal(student.currentSemester)} label="Current Semester" />
-        </div>
-
-        <button
-          type="button"
-          title="Edit profile"
-          className="absolute -bottom-5 right-6 flex h-11 w-11 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg ring-4 ring-white transition-colors hover:bg-brand-400 sm:right-8"
-        >
-          <Pencil size={18} />
-        </button>
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Student Profile</h1>
+        <p className="text-sm text-slate-500 mt-1">Manage your account settings, preferences, and security.</p>
       </div>
 
-      <div className="px-6 pt-8 sm:px-8">
-        <div className="flex gap-6 border-b border-slate-200">
-          <TabButton active={tab === "about"} onClick={() => setTab("about")}>
-            About
-          </TabButton>
-          <TabButton active={tab === "bioData"} onClick={() => setTab("bioData")}>
-            Bio Data
-          </TabButton>
-        </div>
-
-        <div className="py-6 pb-8">
-          {tab === "about" ? (
-            <div>
-              <h2 className="mb-1 text-sm font-semibold text-slate-700">Contact Information</h2>
-              <div className="max-w-xl">
-                <InfoRow icon={Mail} label="Email" value={student.email} />
-                <InfoRow icon={Phone} label="Phone" value={student.contact} />
-                <InfoRow icon={ContactIcon} label="Emergency Contact" value={student.emergencyContact} />
-                <InfoRow icon={Home} label="Present Address" value={student.presentAddress} />
-                <InfoRow
-                  icon={Home}
-                  label="Permanent Address"
-                  value={student.permanentAddress}
-                  last
-                />
+      {/* Top Card: Cover & Profile Info */}
+      <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
+        {/* Cover Photo */}
+        <div 
+          className={`h-48 w-full relative bg-brand-500 transition-all duration-300 group ${isAdjustingCover ? 'cursor-move' : ''}`}
+          style={coverImage ? { backgroundImage: `url(${coverImage})`, backgroundSize: 'cover', backgroundPosition: `center ${coverPositionY}%` } : {}}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          {isAdjustingCover ? (
+            <div className="absolute inset-0 bg-black/20 flex flex-col justify-between p-4">
+              <div className="flex justify-end gap-2">
+                <button 
+                  onClick={() => setIsAdjustingCover(false)}
+                  className="px-4 py-1.5 bg-black/50 hover:bg-black/70 text-white rounded-md text-sm font-medium backdrop-blur-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsAdjustingCover(false);
+                    showToast("Cover photo updated successfully.");
+                  }}
+                  className="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
+                >
+                  Save Changes
+                </button>
+              </div>
+              <div className="flex justify-center pb-8 pointer-events-none">
+                <div className="bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm flex items-center gap-2 shadow-sm">
+                  <Move size={16} /> Drag to reposition
+                </div>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2">
-              <div>
-                <h2 className="mb-1 text-sm font-semibold text-slate-700">Personal Detail</h2>
-                <div>
-                  <InfoRow
-                    icon={Cake}
-                    label="Date of Birth"
-                    value={student.dob ? formatDate(student.dob) : null}
-                  />
-                  <InfoRow icon={Users} label="Gender" value={student.gender} />
-                  <InfoRow icon={CreditCard} label="CNIC" value={student.cnic} />
-                  <InfoRow icon={Map} label="Domicile" value={student.domicile} />
-                  <InfoRow icon={Flag} label="Nationality" value={student.nationality} />
-                  <InfoRow icon={Users} label="Religion" value={student.religion} />
-                  <InfoRow icon={Droplet} label="Blood Group" value={student.bloodGroup} last />
-                </div>
-              </div>
-
-              <div>
-                <h2 className="mb-1 text-sm font-semibold text-slate-700">Family Detail</h2>
-                <div>
-                  <InfoRow icon={Users} label="Father Name" value={student.fatherName} />
-                  <InfoRow icon={CreditCard} label="Father/Guardian CNIC" value={student.fatherCnic} />
-                  <InfoRow icon={Heart} label="Marital Status" value={student.maritalStatus} last />
-                </div>
-              </div>
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+               <button 
+                 onClick={() => coverInputRef.current?.click()}
+                 className="flex items-center gap-2 bg-white/90 text-slate-800 px-4 py-2 rounded-full text-sm font-medium hover:bg-white transition-colors shadow-sm"
+               >
+                 <Camera size={16} />
+                 {coverImage ? "Change Cover" : "Add Cover"}
+               </button>
+               {coverImage && (
+                 <button 
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     setCoverImage(null);
+                     setCoverPositionY(50);
+                   }}
+                   className="flex items-center justify-center h-9 w-9 bg-white/90 text-rose-600 rounded-full hover:bg-white hover:text-rose-700 transition-colors shadow-sm"
+                   title="Remove Cover Photo"
+                 >
+                   <Trash2 size={16} />
+                 </button>
+               )}
             </div>
           )}
+          <input 
+            type="file" 
+            ref={coverInputRef} 
+            onChange={handleCoverUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+        </div>
+
+        {/* Profile Details Section */}
+        <div className="px-8 pb-8 relative">
+          {/* Avatar overhanging the cover photo */}
+          <div className="absolute -top-12 left-8">
+            <div className="relative group">
+              <div 
+                className="h-24 w-24 rounded-full border-4 border-white bg-brand-100 flex items-center justify-center shadow-sm overflow-hidden"
+                style={profileImage ? { backgroundImage: `url(${profileImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              >
+                {!profileImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={getAvatarUrl(student.rollNumber)} alt={student.name} className="h-full w-full object-cover" />
+                )}
+              </div>
+              
+              {isEditingProfilePhoto ? (
+                <div className="absolute -right-12 top-2 flex flex-col gap-2">
+                  <button 
+                    onClick={() => {
+                      setIsEditingProfilePhoto(false);
+                      showToast("Profile photo updated successfully.");
+                    }}
+                    className="h-8 w-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-emerald-600 transition-colors"
+                    title="Save Profile Photo"
+                  >
+                    <Check size={16} strokeWidth={3} />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setProfileImage(null);
+                      setIsEditingProfilePhoto(false);
+                    }}
+                    className="h-8 w-8 bg-slate-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-slate-600 transition-colors"
+                    title="Cancel"
+                  >
+                    <X size={16} strokeWidth={3} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => profileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 h-8 w-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 shadow-sm hover:text-brand-600 transition-colors"
+                    title="Update Profile Photo"
+                  >
+                    <Camera size={14} />
+                  </button>
+                  
+                  {profileImage && (
+                    <button 
+                      onClick={() => setProfileImage(null)}
+                      className="absolute top-0 right-0 h-7 w-7 bg-rose-500 text-white border-2 border-white rounded-full flex items-center justify-center shadow-sm hover:bg-rose-600 transition-colors"
+                      title="Remove Profile Photo"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </>
+              )}
+              
+              <input 
+                type="file" 
+                ref={profileInputRef} 
+                onChange={handleProfileUpload} 
+                accept="image/*" 
+                className="hidden" 
+              />
+            </div>
+          </div>
+
+          <div className="pt-16 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{student.name}</h2>
+              <div className="flex items-center gap-2 text-slate-500 mt-1">
+                <Mail size={14} />
+                <span className="text-sm font-medium">{student.email}</span>
+                <span className="text-sm font-medium ml-2 text-brand-600 px-2 py-0.5 bg-brand-50 rounded-full">{student.rollNumber}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-100 self-start md:self-auto">
+              <ShieldCheck size={16} />
+              <span className="text-sm font-semibold">Student</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function HeaderStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <p className="text-base font-semibold sm:text-lg">{value}</p>
-      <p className="text-xs text-brand-100">{label}</p>
-    </div>
-  );
-}
+      {/* Bottom Grid: Forms */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Personal Information */}
+        <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-8 flex flex-col">
+          <div className="flex items-center gap-2 mb-6 text-brand-800">
+            <User size={20} className="stroke-[2.5]" />
+            <h3 className="text-lg font-bold tracking-tight">Personal Information</h3>
+          </div>
+          
+          <div className="space-y-5 flex-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">Phone Number</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone size={16} className="text-slate-400" />
+                </div>
+                <input 
+                  type="text" 
+                  defaultValue={student.contact || "+92 300 1234567"}
+                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                />
+              </div>
+            </div>
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`-mb-px border-b-2 pb-3 text-sm font-medium uppercase tracking-wide transition-colors ${
-        active
-          ? "border-brand-600 text-brand-700"
-          : "border-transparent text-slate-400 hover:text-slate-600"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">Language Preference</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Globe size={16} className="text-slate-400" />
+                </div>
+                <select className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 appearance-none cursor-pointer transition-all">
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <ChevronDown size={16} className="text-slate-400" />
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Note: The dashboard defaults to English. Changing this updates your global preference.
+              </p>
+            </div>
+          </div>
 
-function InfoRow({
-  icon: Icon,
-  label,
-  value,
-  last = false,
-}: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  value: string | null;
-  last?: boolean;
-}) {
-  return (
-    <div className={`flex items-center gap-3 py-3 ${last ? "" : "border-b border-slate-100"}`}>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-        <Icon size={16} />
-      </div>
-      {value ? (
-        <div>
-          <p className="text-sm font-medium text-slate-900">{value}</p>
-          <p className="text-xs text-slate-400">{label}</p>
+          <div className="mt-8 pt-4">
+            <button 
+              onClick={() => showToast("Personal information saved successfully.")}
+              className="w-full bg-brand-800 text-white font-semibold py-3 rounded-xl hover:bg-brand-900 transition-colors shadow-sm"
+            >
+              Save Profile
+            </button>
+          </div>
         </div>
-      ) : (
-        <p className="text-sm text-slate-400">{label}</p>
-      )}
+
+        {/* Security Settings */}
+        <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-8 flex flex-col">
+          <div className="flex items-center gap-2 mb-6 text-brand-800">
+            <Key size={20} className="stroke-[2.5]" />
+            <h3 className="text-lg font-bold tracking-tight">Security Settings</h3>
+          </div>
+          
+          <div className="space-y-5 flex-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">Current Password</label>
+              <input 
+                type="password" 
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">New Password</label>
+              <input 
+                type="password" 
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">Confirm Password</label>
+              <input 
+                type="password" 
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="mt-8 pt-4">
+            <button 
+              onClick={() => showToast("Security settings updated successfully.")}
+              className="w-full bg-white text-slate-700 border border-slate-200 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+            >
+              Update Password
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

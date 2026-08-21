@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent, useRef } from "react";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import AccentCard from "@/components/dashboard/AccentCard";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export interface MockFormField {
   name: string;
@@ -109,6 +110,7 @@ export default function MockForm({
   const [values, setValues] = useState<Record<string, string>>({});
   const [courses, setCourses] = useState<Course[]>([]);
   const [submitted, setSubmitted] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const needsCourses = fields.some((f) => f.type === "course-select");
 
@@ -128,6 +130,7 @@ export default function MockForm({
     const ref = `${referencePrefix}-${Math.floor(100000 + Math.random() * 900000)}`;
     setSubmitted(ref);
     setValues({});
+    showToast("Request submitted successfully.");
   }
 
   if (submitted) {
